@@ -82,7 +82,10 @@
 // The (/home route), which responds with "home is in server".
 
 //                                     @@@@  middleware:-
-// middleware ==> is like a checkpoint in the request-response cycle, allowing you to execute code before sending a final response.
+// middleware ==> refers to functions that have access to the request object (req), the response object (res), and the next middleware function in the application’s request-response cycle.
+// Middleware functions can perform a variety of tasks, such as executing code, making changes to the request and response objects, ending the request-response cycle, or calling the next middleware in the stack.
+// Middleware is heavily used in frameworks like Express to manage the flow of requests and responses.
+
 // SPECIFIC MIDDLEWARE ==> is where fun() function is called for specific api and not all apis.
 // const fun = (req, res, next) => {
 //   console.log("middleware is working");
@@ -108,7 +111,7 @@
 //   console.log("server running on PORT:8000");
 // });
 // here server is running with port 8000, and (localhost:8000/home) we get ist api called.
-// here home api is called and after that fun function (middleware) is called and in fun function console is printed and next() is called.
+// here home api is called and after that fun function (middleware) is called and in fun function console is printed and next() callback is called.
 // after that controller(i.e req, res) => {} ==> is called and console is printed.
 
 // In 2nd (localhost:8000/home11) we get 2nd home11 called.
@@ -252,7 +255,7 @@
  */
 // express.json(): This is a built-in middleware function in Express.js that parses incoming requests with JSON payloads. It extracts the JSON data from the request body and makes it available on req.body.
 
-// here we connect DB by mongoDB as
+// here we connect server with mongoDB(data base) as
 // const express = require("express");
 // const mongoose = require("mongoose");
 
@@ -347,6 +350,129 @@ app.listen(8000, () => {
 // A new instance of userModel (which should be defined in the userSchema.js file) is created with the values provided.
 // The userObj.save() method asynchronously saves the user to MongoDB.
 
-// @@ Session based authorisation:
-// Session: ==> object which is collection of temporary data. we store session data on DB. ex: {key:value, key:value}
-// Cookie: ==> temporary data stored on client side ex: (key:value)
+// app.use(express.urlencoded({ extended: true })) ==> covert form data into readable format.
+
+//                                    @@ Session based authorisation:
+// Session: ==> object which is collection of temporary data. we store session data on DB. ex: {key:value, key:value} format.
+// Cookie: ==> temporary data stored on client side(browser). ex: (key:value)
+
+// session:- is like way for website to remember who you are while you're browsing it. Since websites (using HTTP) normally forget everything after each click or page load, a session helps them "remember" things about you, like if you're logged in or what's in your shopping cart.
+
+/**
+ * ==> session process:-
+ *  1. Client request: The user makes a request (ex: login) to the server.
+ *  2. Session creation: If the login is successful, the server creates a session and stores user information on the server.
+ *  3. Session ID: The server generates a unique session ID and sends it to the user's browser as a cookie.
+ *  4. Client stores session ID: The browser stores this session ID and sends it with every request to the server.
+ *  5. Server retrieves session: The server uses the session ID to look up the stored session data and maintain user information.
+ */
+
+// npm i express-session connect-mongodb-session => install packages.
+// express-session:- is middleware for Express.js that allows you to manage sessions for your users.
+// connect-mongodb-session:- is a MongoDB session store for express-session. It stores the session data in a MongoDB database, making it persistent across server restarts.
+
+// const session = require("express-session"):-
+// session is a way to store information about a user between their requests.
+// For example, if a user logs into a website, the session can store their login state so they don't have to log in again for each page.
+
+// const mongodbSession = require("connect-mongodb-session")(session)
+// connect-mongodb-session is a package that works with MongoDB and express-session.
+// When you run require("connect-mongodb-session")(session), you're calling the connect-mongodb-session function and passing the session module from express-session to it. The result is stored in the variable mongodbSession.
+
+/**
+app.use(
+  session({
+    secret: "secret login key",
+    store: Mongostore,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+  app.use(session({...})) ==> using express-session middleware to manage user sessions. Sessions allow data to be stored server-side and  a particular user by a unique session ID, which is stored in a cookie on the client side.
+  secret:- is a key used to sign and encrypt the session ID cookie, that gets sent to the client.
+  Mongostore:- is the session store instance that connects your sessions to your MongoDB database.
+  resave: false ==> if data of user is new then it stores the new user data, otherwise it is set to false.
+  saveUninitialized: false ==> this prevents a session from being created until something is stored in the session.
+*/
+
+/**
+  const Mongostore = mongodbSession({
+   url: MONGO_URL,
+   collection: "MySessions",
+});
+   It creates an instance of a session store that will be used by express-session to store and manage session data.
+   session data will be stored in the "MySessions" collection of the MongoDB database.
+ */
+//                                   @@@@ FILE-SYSTEM.
+// File System(fs) in Node.js provides functions to interact with the file system, allowing you to work with files and directories.
+// server creation using HTTP method.(instead of using 'express' framwork).
+
+// const http = require("http");
+// const server = http.createServer();
+
+// server.on("request", (req, res) => {
+//   console.log(req.url + " " + req.method);
+
+//   if (req.method === "GET" && req.url === "/home") {
+//     return res.end("server in up and running");
+//   } else {
+//     return res.end(`Api not found : ${req.method} ${req.url} `);
+//   }
+// });
+// server.listen(8000, () => {
+//   console.log("http server on... PORT:8000");
+// });
+// in HTTP method server, we create apis as in above code.
+// we should create our own api by if condition as method and url.
+
+// @@@@ CRUD(create, read, update, delete) are performed using file system.
+const http = require("http");
+const fs = require("fs");
+
+const server = http.createServer();
+
+server.on("request", (req, res) => {
+  console.log(req.url + " " + req.method);
+  const data = "nodejs11 backend module";
+
+  if (req.method === "GET" && req.url === "/writefile") {
+    fs.writeFile("demo.txt", data, (err) => {
+      if (err) throw err;
+      return res.end("write successful");
+    });
+  } else if (req.method === "GET" && req.url === "/appendfile") {
+    fs.appendFile("demo.txt", data, (err) => {
+      if (err) throw err;
+      return res.end("append successful");
+    });
+  } else if (req.method === "GET" && req.url === "/readfile") {
+    fs.readFile("form.html", (err, data) => {
+      if (err) throw err;
+      console.log(data);
+      return res.end(data);
+    });
+  } else if (req.method === "GET" && req.url === "/deletefile") {
+    fs.unlink("demo.txt", (err) => {
+      if (err) throw err;
+      return res.end("deleted file successfully");
+    });
+  } else if (req.method === "GET" && req.url === "/renamefile") {
+    fs.rename("demo.txt", "newDemo.txt", (err) => {
+      if (err) throw err;
+      return res.end("rename successfull");
+    });
+  } else {
+    return res.end(`Api not found : ${req.method} ${req.url} `);
+  }
+});
+server.listen(8000, () => {
+  console.log("http server on... PORT:8000");
+});
+// this is how, we can write data into demo.txt file using server.
+// fs.writeFile ==> takes 'file we want to add data', 'data' that we want to add data into file, and callback error.
+
+// writeFile ==> overwrites the existing data and it will automatically create demo.txt file.
+// appendfile ==> adds data with existing old data.
+// readFile ==> read that file data and in browser it shows in format of <buffer>.
+// unlink ==> will delete the file.
+// rename ==> will delete old file and create new file, and old file data is copied to new file.
